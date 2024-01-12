@@ -1,0 +1,1 @@
+Hecuba is an attempt to implement a multithreading HTTP server from scratch in Java using off-heap memory.
