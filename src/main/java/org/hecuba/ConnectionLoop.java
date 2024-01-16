@@ -20,6 +20,7 @@ public class ConnectionLoop extends Thread {
         }
     }
 
+
     ConnectionLoop() throws IOException {
         this.buffer = ByteBuffer.allocate(1024);
         this.setName("connection-loop");
@@ -55,6 +56,8 @@ public class ConnectionLoop extends Thread {
                     if (key.isReadable()) {
                         Connection conn = (Connection) key.attachment();
                         conn.socketChannel.read(this.buffer);
+                        var rt = new RequestTokenizer(this.buffer.array());
+
                         buffer.flip();
                         conn.socketChannel.write(this.buffer);
                         buffer.clear();
