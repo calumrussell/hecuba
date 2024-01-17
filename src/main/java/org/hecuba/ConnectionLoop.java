@@ -76,13 +76,9 @@ public class ConnectionLoop extends Thread {
                         );
 
                         var resp = new Response(Response.StatusCode.TwoHundred, headers);
-                        var writeBuffer = ByteBuffer.wrap(resp.serialize());
-
-                        this.buffer.clear();
-                        int amount = Math.min(buffer.remaining(), writeBuffer.remaining());
-                        buffer.put(writeBuffer.array(), writeBuffer.position(), amount);
-                        buffer.flip();
-                        int written = conn.socketChannel.write(this.buffer);
+                        this.buffer.put(resp.serialize());
+                        this.buffer.flip();
+                        conn.socketChannel.write(this.buffer);
                         conn.socketChannel.close();
                     }
 
