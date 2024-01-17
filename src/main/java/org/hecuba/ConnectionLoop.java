@@ -5,6 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.Collections;
+import java.util.List;
 
 public class ConnectionLoop extends Thread {
     ByteBuffer buffer;
@@ -13,6 +15,12 @@ public class ConnectionLoop extends Thread {
     private class Connection {
         public final SocketChannel socketChannel;
         public final SelectionKey selectionKey;
+
+        public Request request;
+
+        public void addRequest(Request request) {
+            this.request = request;
+        }
 
         Connection(SocketChannel socketChannel, SelectionKey selectionKey) {
             this.selectionKey = selectionKey;
@@ -55,14 +63,29 @@ public class ConnectionLoop extends Thread {
                     SelectionKey key = iter.next();
                     if (key.isReadable()) {
                         Connection conn = (Connection) key.attachment();
+                        this.buffer.clear();
                         conn.socketChannel.read(this.buffer);
-                        var rt = new RequestTokenizer(this.buffer.array());
+                        var req = new Request(this.buffer.array());
+                        conn.addRequest(new Request(this.buffer.array()));
 
+                        this.buffer.flip();
+
+                        var headers = List.of(
+                                new Response.Header("Content-Type", "text/plain"),
+                                new Response.Header("Content-Length", "12")
+                        );
+
+                        var resp = new Response(Response.StatusCode.TwoHundred, headers);
+                        var writeBuffer = ByteBuffer.wrap(resp.serialize());
+
+                        this.buffer.clear();
+                        int amount = Math.min(buffer.remaining(), writeBuffer.remaining());
+                        buffer.put(writeBuffer.array(), writeBuffer.position(), amount);
                         buffer.flip();
-                        conn.socketChannel.write(this.buffer);
-                        buffer.clear();
+                        int written = conn.socketChannel.write(this.buffer);
                         conn.socketChannel.close();
                     }
+
                     iter.remove();
                 }
             } catch (IOException e) {

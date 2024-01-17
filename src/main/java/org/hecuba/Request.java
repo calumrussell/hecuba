@@ -2,7 +2,7 @@ package org.hecuba;
 
 import java.util.Arrays;
 
-public class RequestTokenizer {
+public class Request {
 
     public enum RequestMethod {
         GET,
@@ -30,7 +30,7 @@ public class RequestTokenizer {
         return this.requestVersion;
     }
 
-    public RequestTokenizer(byte[] input) {
+    public Request(byte[] input) {
         byte[] buffer = new byte[100];
         int bufferWritePosition = 0;
 
