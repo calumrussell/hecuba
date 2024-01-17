@@ -28,7 +28,6 @@ public class ServerLoop extends Thread {
             this.channel.register(selector, SelectionKey.OP_ACCEPT);
             this.setName("server-loop");
             this.connectionLoop = new ConnectionLoop();
-            this.connectionLoop.start();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -37,6 +36,7 @@ public class ServerLoop extends Thread {
     @Override
     public void start() {
         super.start();
+        Thread.ofVirtual().start(this.connectionLoop);
     }
 
     @Override

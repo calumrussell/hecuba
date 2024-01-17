@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.Collections;
 import java.util.List;
 
 public class ConnectionLoop extends Thread {
@@ -30,7 +29,7 @@ public class ConnectionLoop extends Thread {
 
 
     ConnectionLoop() throws IOException {
-        this.buffer = ByteBuffer.allocate(1024);
+        this.buffer = ByteBuffer.allocate(1024 * 10);
         this.setName("connection-loop");
         this.selector = Selector.open();
     }
@@ -64,22 +63,28 @@ public class ConnectionLoop extends Thread {
                     if (key.isReadable()) {
                         Connection conn = (Connection) key.attachment();
                         this.buffer.clear();
-                        conn.socketChannel.read(this.buffer);
-                        var req = new Request(this.buffer.array());
-                        conn.addRequest(new Request(this.buffer.array()));
+                        int read = conn.socketChannel.read(this.buffer);
+                        if (read == -1) {
+                            this.buffer.clear();
+                            conn.socketChannel.close();
+                        } else {
+                            var req = new Request(this.buffer.array());
+                            conn.addRequest(new Request(this.buffer.array()));
 
-                        this.buffer.flip();
+                            this.buffer.flip();
 
-                        var headers = List.of(
-                                new Response.Header("Content-Type", "text/plain"),
-                                new Response.Header("Content-Length", "12")
-                        );
+                            var headers = List.of(
+                                    new Response.Header("Content-Type", "text/plain"),
+                                    new Response.Header("Content-Length", "12")
+                            );
 
-                        var resp = new Response(Response.StatusCode.TwoHundred, headers);
-                        this.buffer.put(resp.serialize());
-                        this.buffer.flip();
-                        conn.socketChannel.write(this.buffer);
-                        conn.socketChannel.close();
+                            var resp = new Response(Response.StatusCode.TwoHundred, headers);
+                            this.buffer.put(resp.serialize());
+                            this.buffer.flip();
+                            conn.socketChannel.write(this.buffer);
+                            conn.socketChannel.close();
+                            this.buffer.clear();
+                        }
                     }
 
                     iter.remove();
