@@ -76,8 +76,8 @@ public class Response {
 
     private final StatusCode statusCode;
     private final List<Header> headers;
-    // HTTP/1.1/
-    private final static byte[] versionBytes = new byte[]{72,84,84,80,47,49,46,49,32};
+    // HTTP/1.0
+    private final static byte[] versionBytes = new byte[]{72,84,84,80,47,49,46,48,32};
 
     public Response(StatusCode statusCode, List<Header> headers){
         this.statusCode = statusCode;
