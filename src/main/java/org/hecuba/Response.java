@@ -85,6 +85,8 @@ public class Response {
     }
 
     public int serialize(ByteBuffer dest) {
+        dest.limit(dest.capacity());
+
         int position = dest.position();
         dest.put(versionBytes);
         assert this.statusCode.getStatusBytes() != null;
@@ -96,11 +98,14 @@ public class Response {
         for (byte[] header: serializedHeaders) {
             dest.put(header);
         }
+
         // Write CLRF empty line
         dest.put(new byte[]{13,10});
         byte[] hello = "Hello World\n".getBytes(StandardCharsets.US_ASCII);
         dest.put(hello);
 
+        dest.limit(dest.position());
         return dest.position() - position;
+
     }
 }

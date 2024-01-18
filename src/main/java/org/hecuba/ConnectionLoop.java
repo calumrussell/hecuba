@@ -29,7 +29,7 @@ public class ConnectionLoop extends Thread {
 
 
     ConnectionLoop() throws IOException {
-        this.buffer = ByteBuffer.allocate(1024 * 10);
+        this.buffer = ByteBuffer.allocateDirect(1024);
         this.setName("connection-loop");
         this.selector = Selector.open();
     }
@@ -61,7 +61,6 @@ public class ConnectionLoop extends Thread {
                 while (iter.hasNext()) {
                     SelectionKey key = iter.next();
                     if (key.isReadable()) {
-                        // Still has a bug if the writebuffer is longer than the readbuffer, overflows
                         Connection conn = (Connection) key.attachment();
                         this.buffer.clear();
                         int read = conn.socketChannel.read(this.buffer);
@@ -69,8 +68,7 @@ public class ConnectionLoop extends Thread {
                             this.buffer.clear();
                             conn.socketChannel.close();
                         } else {
-                            var req = new Request(this.buffer.array());
-                            conn.addRequest(new Request(this.buffer.array()));
+                            //conn.addRequest(new Request(this.buffer.array()));
 
                             this.buffer.flip();
 
