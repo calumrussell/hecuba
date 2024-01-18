@@ -84,16 +84,6 @@ public class Response {
         this.headers = headers;
     }
 
-    private int writeInto (byte[] src, byte[] dest, int currPosition) {
-        // We return the last write position
-        int writePosition = currPosition;
-        for (byte i: src) {
-            dest[writePosition] = i;
-            writePosition++;
-        }
-        return writePosition;
-    }
-
     public int serialize(ByteBuffer dest) {
         int position = dest.position();
         dest.put(versionBytes);
