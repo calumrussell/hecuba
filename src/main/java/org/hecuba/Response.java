@@ -94,33 +94,23 @@ public class Response {
         return writePosition;
     }
 
-    public byte[] serialize() {
-        int length = 0;
-        length+= versionBytes.length;
+    public int serialize(ByteBuffer dest) {
+        int position = dest.position();
+        dest.put(versionBytes);
         assert this.statusCode.getStatusBytes() != null;
-        length+= this.statusCode.getStatusBytes().length;
+        dest.put(this.statusCode.getStatusBytes());
         assert this.statusCode.getReasonBytes() != null;
-        length+= this.statusCode.getReasonBytes().length;
+        dest.put(this.statusCode.getReasonBytes());
 
         var serializedHeaders = this.headers.stream().map(Header::serialize).toList();
-        length += serializedHeaders.stream().map(v -> v.length).reduce(0, Integer::sum);
-
-        byte[] hello = "Hello World\n".getBytes(StandardCharsets.US_ASCII);
-        length += hello.length;
-
-        byte[] res = new byte[length+2];
-
-        int writePosition = 0;
-        writePosition = writeInto(versionBytes, res, writePosition);
-        writePosition = writeInto(this.statusCode.getStatusBytes(), res, writePosition);
-        writePosition = writeInto(this.statusCode.getReasonBytes(), res, writePosition);
         for (byte[] header: serializedHeaders) {
-            writePosition = writeInto(header, res, writePosition);
+            dest.put(header);
         }
         // Write CLRF empty line
-        writePosition = writeInto(new byte[]{13,10}, res, writePosition);
+        dest.put(new byte[]{13,10});
+        byte[] hello = "Hello World\n".getBytes(StandardCharsets.US_ASCII);
+        dest.put(hello);
 
-        writeInto(hello, res, writePosition);
-        return res;
+        return dest.position() - position;
     }
 }

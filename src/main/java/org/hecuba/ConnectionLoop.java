@@ -80,7 +80,7 @@ public class ConnectionLoop extends Thread {
                             );
 
                             var resp = new Response(Response.StatusCode.TwoHundred, headers);
-                            this.buffer.put(resp.serialize());
+                            int resp_size = resp.serialize(this.buffer);
                             this.buffer.flip();
                             conn.socketChannel.write(this.buffer);
                             conn.socketChannel.close();
