@@ -61,6 +61,7 @@ public class ConnectionLoop extends Thread {
                 while (iter.hasNext()) {
                     SelectionKey key = iter.next();
                     if (key.isReadable()) {
+                        // Still has a bug if the writebuffer is longer than the readbuffer, overflows
                         Connection conn = (Connection) key.attachment();
                         this.buffer.clear();
                         int read = conn.socketChannel.read(this.buffer);

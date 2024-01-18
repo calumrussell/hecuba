@@ -7,6 +7,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * ServerSocketChannel can only accept connections. We need to accept them to create SocketChannel that can be read
@@ -15,8 +17,9 @@ import java.nio.channels.SocketChannel;
 public class ServerLoop extends Thread {
     private final Selector selector;
     private final ServerSocketChannel channel;
-
-    private final ConnectionLoop connectionLoop;
+    private final List<ConnectionLoop> connectionLoops;
+    private int connectionPosition;
+    private final int connectionCount;
 
     ServerLoop() {
         try {
@@ -27,16 +30,32 @@ public class ServerLoop extends Thread {
             this.channel.configureBlocking(false);
             this.channel.register(selector, SelectionKey.OP_ACCEPT);
             this.setName("server-loop");
-            this.connectionLoop = new ConnectionLoop();
+
+            this.connectionPosition = 0;
+            this.connectionCount = 10;
+            this.connectionLoops = new ArrayList<>();
+            for (int i=0; i <= this.connectionCount; i++) {
+                this.connectionLoops.add(new ConnectionLoop());
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private ConnectionLoop getConnection() {
+        // Get mutates state
+        if (this.connectionPosition >= this.connectionCount) {
+            this.connectionPosition = 0;
+        }
+        var curr = this.connectionPosition;
+        this.connectionPosition+=1;
+        return this.connectionLoops.get(curr);
+    }
+
     @Override
     public void start() {
         super.start();
-        Thread.ofVirtual().start(this.connectionLoop);
+        this.connectionLoops.forEach(Thread::startVirtualThread);
     }
 
     @Override
@@ -49,7 +68,8 @@ public class ServerLoop extends Thread {
                 while (iter.hasNext()) {
                     SelectionKey key = iter.next();
                     if (key.isAcceptable()) {
-                        this.connectionLoop.register(channel.accept());
+                        var connection = this.getConnection();
+                        connection.register(channel.accept());
                     }
                     iter.remove();
                 }
